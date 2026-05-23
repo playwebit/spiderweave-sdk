@@ -31,11 +31,11 @@ Basic usage:
 import time
 from typing import Dict, List, Optional
 
-from spider_hash import SpiderHashEngine
-from chain_sequencer import ChainSequencer
-from adapters.base_adapter import BaseDBAdapter
-from adapters.base_blockchain_adapter import BaseBlockchainAdapter
-from exceptions import (
+from spiderchain.spider_hash import SpiderHashEngine
+from spiderchain.chain_sequencer import ChainSequencer
+from spiderchain.adapters.base_adapter import BaseDBAdapter
+from spiderchain.adapters.base_blockchain_adapter import BaseBlockchainAdapter
+from spiderchain.exceptions import (
     TamperDetectedError,
     ChainBrokenError,
     AdapterNotConfiguredError

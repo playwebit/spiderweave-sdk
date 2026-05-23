@@ -31,7 +31,7 @@ import time
 import hashlib
 from typing import Dict, Optional, List
 
-from adapters.base_blockchain_adapter import BaseBlockchainAdapter
+from spiderchain.adapters.base_blockchain_adapter import BaseBlockchainAdapter
 
 
 class EVMAdapter(BaseBlockchainAdapter):

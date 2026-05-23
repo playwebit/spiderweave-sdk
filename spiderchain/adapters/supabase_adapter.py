@@ -19,7 +19,7 @@ import json
 import time
 from typing import List, Dict, Optional
 
-from adapters.base_adapter import BaseDBAdapter
+from spiderchain.adapters.base_adapter import BaseDBAdapter
 
 
 class SupabaseAdapter(BaseDBAdapter):
