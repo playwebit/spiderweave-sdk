@@ -2,12 +2,17 @@
 spider_hash.py
 --------------
 Core Spider Hash Engine — Spider Chain SDK
-Invented by: PlayWebit / CipherVault (2024)
 
-This is the heart of Spider Chain. It takes hashes from multiple
-database tables and mixes them into one final Spider Hash that gets
-anchored on-chain. If anyone tampers with any single table, the
-Spider Hash breaks — exposing the attack instantly.
+Supports two modes:
+
+1. GENERIC mode (default)
+   Works with any database, any tables.
+   Collects row hashes and mixes them in sorted order.
+
+2. CUSTOM STRATEGY mode
+   Developer passes a HashStrategy subclass that defines
+   exactly how hashes are collected and mixed.
+   Used by PlayWebit's 7-component algorithm.
 
 No external dependencies. Pure Python.
 """
@@ -15,170 +20,307 @@ No external dependencies. Pure Python.
 import hashlib
 import json
 import time
+from abc import ABC, abstractmethod
 from typing import List, Dict, Optional
 
 
-class SpiderHashEngine:
+# ── Base Strategy ─────────────────────────────────────────────
+
+class HashStrategy(ABC):
     """
-    Mixes hashes from N tables into one Spider Hash.
+    Abstract base for custom hash strategies.
 
-    The algorithm:
-        1. Collect a hash from every registered table row
-        2. Collect the previous Spider Hash (chain continuity)
-        3. Mix all hashes together in a fixed sequence
-        4. SHA-256 the combined string → final Spider Hash
+    Subclass this to define your own hash mixing logic.
+    Pass an instance to SpiderHashEngine(strategy=...).
 
-    The sequence matters. Changing any one input produces a
-    completely different output — tamper detection by design.
+    Example — PlayWebit 7-component strategy:
+        engine = SpiderHashEngine(strategy=PlayWebitStrategy(supabase_client))
     """
 
-    def __init__(self):
-        self.version = "1.0.0"
-
-    def calculate_spider_hash(
-        self,
-        table_hashes: Dict[str, str],
-        previous_hash: str,
-        anchor_data: Optional[Dict] = None,
-        timestamp: Optional[int] = None
-    ) -> str:
+    @abstractmethod
+    def collect_hashes(self, event_context: Dict) -> Dict[str, str]:
         """
-        Calculate a Spider Hash from multiple table hashes.
+        Collect all component hashes for this event.
 
         Args:
-            table_hashes: Dict of { table_name: row_hash }
-                          e.g. { "nfts": "abc123...", "wallets": "def456..." }
-            previous_hash: The last Spider Hash in this chain (for continuity).
-                           Pass "0" * 64 for the first event.
-            anchor_data:   Optional dict of extra data to lock into the hash
-                           (e.g. event type, user id, transaction id)
-            timestamp:     Unix timestamp in ms. Uses current time if None.
+            event_context: Dict of values describing the event
+                           e.g. { "token_id": "abc", "user_id": "0xabc" }
+
+        Returns:
+            Dict of { component_name: hash_value }
+            e.g. {
+                "original":        "a3f9...",
+                "previous_nft":    "b7d4...",
+                "creator_wallet":  "c9a1...",
+                ...
+            }
+        """
+        pass
+
+    @abstractmethod
+    def mix_hashes(self, hashes: Dict[str, str]) -> str:
+        """
+        Mix collected hashes into one final Spider Hash.
+
+        Args:
+            hashes: Dict returned by collect_hashes()
 
         Returns:
             64-character hex SHA-256 Spider Hash
         """
-        if timestamp is None:
-            timestamp = int(time.time() * 1000)
+        pass
 
-        # Step 1: Hash the anchor data if provided
-        anchor_hash = "0" * 64
-        if anchor_data:
-            anchor_hash = self._hash_dict(anchor_data)
 
-        # Step 2: Sort table names for deterministic ordering
-        # (same tables must always produce same sequence)
-        sorted_tables = sorted(table_hashes.items())
+# ── PlayWebit Strategy ────────────────────────────────────────
 
-        # Step 3: Build the combined string
-        # Format: anchor + previous + table1_name:hash + table2_name:hash + ...
-        parts = [anchor_hash, previous_hash]
-        for table_name, row_hash in sorted_tables:
-            parts.append(f"{table_name}:{row_hash}")
+class PlayWebitStrategy(HashStrategy):
+    """
+    PlayWebit / CipherVault 7-component Spider Hash Strategy.
 
-        # Step 4: Add timestamp for uniqueness
-        parts.append(str(timestamp))
+    This is the original Spider Chain Hash Architecture as
+    implemented in PlayWebit's NFT platform.
+
+    Components:
+        1. original_hash       — SHA256 of core NFT fields
+        2. previous_nft_hash   — latest hash across all NFTs
+        3. same_token_hash     — latest hash for this specific token
+        4. creator_wallet_hash — wallet integrity_hash for creator
+        5. owner_wallet_hash   — wallet integrity_hash for owner
+        6. creator_session_hash— session integrity_hash for creator
+        7. owner_session_hash  — session integrity_hash for owner
+
+    Usage:
+        from spiderchain.spider_hash import PlayWebitStrategy
+        from supabase import create_client
+
+        supabase = create_client(url, key)
+        strategy = PlayWebitStrategy(supabase)
+        engine   = SpiderHashEngine(strategy=strategy)
+    """
+
+    def __init__(self, supabase_client):
+        """
+        Args:
+            supabase_client: An initialized Supabase client instance
+        """
+        self.db = supabase_client
+
+    def collect_hashes(self, event_context: Dict) -> Dict[str, str]:
+        """
+        Collect all 7 components from Supabase tables.
+
+        event_context must contain:
+            nft_data:  full NFT row dict
+            timestamp: broadcast timestamp in ms
+        """
+        nft_data  = event_context["nft_data"]
+        timestamp = event_context["timestamp"]
+
+        # 1. Original data hash
+        original_data = json.dumps({
+            "token_id":   nft_data["token_id"],
+            "metadata":   nft_data["metadata"],
+            "creator":    nft_data["creator"],
+            "owner":      nft_data["owner"],
+            "for_sale":   nft_data["for_sale"],
+            "sale_price": nft_data["sale_price"],
+            "timestamp":  nft_data["timestamp"]
+        }, sort_keys=True)
+        original_hash = hashlib.sha256(original_data.encode()).hexdigest()
+
+        # 2. Previous NFT hash — latest across ALL nfts
+        try:
+            r = self.db.table('nfts').select('spider_hash')\
+                .lt('timestamp', timestamp)\
+                .order('timestamp', desc=True).limit(1).execute()
+            previous_hash = r.data[0]['spider_hash'] if r.data else "0" * 64
+        except:
+            previous_hash = "0" * 64
+
+        # 3. Same token audit hash — latest for THIS token
+        try:
+            r = self.db.table('nfts').select('spider_hash')\
+                .eq('token_id', nft_data["token_id"])\
+                .lt('timestamp', timestamp)\
+                .order('timestamp', desc=True).limit(1).execute()
+            same_token_hash = r.data[0]['spider_hash'] if r.data else "0" * 64
+        except:
+            same_token_hash = "0" * 64
+
+        # 4. Creator wallet integrity hash
+        try:
+            r = self.db.table('wallets').select('integrity_hash')\
+                .eq('address', nft_data["creator"].lower()).execute()
+            creator_wallet_hash = r.data[0]['integrity_hash'] if r.data else "0" * 64
+        except:
+            creator_wallet_hash = "0" * 64
+
+        # 5. Owner wallet integrity hash
+        try:
+            r = self.db.table('wallets').select('integrity_hash')\
+                .eq('address', nft_data["owner"].lower()).execute()
+            owner_wallet_hash = r.data[0]['integrity_hash'] if r.data else "0" * 64
+        except:
+            owner_wallet_hash = "0" * 64
+
+        # 6. Creator session integrity hash
+        try:
+            r = self.db.table('sessions').select('integrity_hash')\
+                .eq('address', nft_data["creator"].lower()).execute()
+            creator_session_hash = r.data[0]['integrity_hash'] if r.data else "0" * 64
+        except:
+            creator_session_hash = "0" * 64
+
+        # 7. Owner session integrity hash
+        try:
+            r = self.db.table('sessions').select('integrity_hash')\
+                .eq('address', nft_data["owner"].lower()).execute()
+            owner_session_hash = r.data[0]['integrity_hash'] if r.data else "0" * 64
+        except:
+            owner_session_hash = "0" * 64
+
+        return {
+            "1_original":        original_hash,
+            "2_previous_nft":    previous_hash,
+            "3_same_token":      same_token_hash,
+            "4_creator_wallet":  creator_wallet_hash,
+            "5_owner_wallet":    owner_wallet_hash,
+            "6_creator_session": creator_session_hash,
+            "7_owner_session":   owner_session_hash
+        }
+
+    def mix_hashes(self, hashes: Dict[str, str]) -> str:
+        """
+        Mix 7 components in exact PlayWebit order.
+        Concatenate all 7 hashes then SHA256 the result.
+        """
+        combined = (
+            hashes["1_original"] +
+            hashes["2_previous_nft"] +
+            hashes["3_same_token"] +
+            hashes["4_creator_wallet"] +
+            hashes["5_owner_wallet"] +
+            hashes["6_creator_session"] +
+            hashes["7_owner_session"]
+        )
+        return hashlib.sha256(combined.encode()).hexdigest()
+
+
+# ── Generic Strategy ──────────────────────────────────────────
+
+class GenericStrategy(HashStrategy):
+    """
+    Generic hash strategy — works with any database and any tables.
+
+    Sorts table hashes alphabetically for deterministic ordering
+    then mixes them with a separator. No table-specific logic.
+
+    This is the default strategy when no custom one is provided.
+    """
+
+    def collect_hashes(self, event_context: Dict) -> Dict[str, str]:
+        """
+        event_context must contain:
+            table_hashes: { table_name: row_hash }
+            previous_hash: str
+        """
+        return {
+            "table_hashes":  event_context.get("table_hashes", {}),
+            "previous_hash": event_context.get("previous_hash", "0" * 64)
+        }
+
+    def mix_hashes(self, hashes: Dict[str, str]) -> str:
+        """Mix table hashes sorted alphabetically + previous hash."""
+        table_hashes  = hashes.get("table_hashes", {})
+        previous_hash = hashes.get("previous_hash", "0" * 64)
+
+        parts = [previous_hash]
+        for name, h in sorted(table_hashes.items()):
+            parts.append(f"{name}:{h}")
 
         combined = "|".join(parts)
+        return hashlib.sha256(combined.encode()).hexdigest()
 
-        # Step 5: Final SHA-256
-        final_hash = hashlib.sha256(combined.encode()).hexdigest()
-        return final_hash
 
-    def verify_spider_hash(
-        self,
-        stored_hash: str,
-        table_hashes: Dict[str, str],
-        previous_hash: str,
-        anchor_data: Optional[Dict] = None,
-        timestamp: Optional[int] = None
-    ) -> bool:
+# ── Core Engine ───────────────────────────────────────────────
+
+class SpiderHashEngine:
+    """
+    Spider Hash Engine.
+
+    Uses a HashStrategy to collect and mix hashes.
+    Defaults to GenericStrategy if none provided.
+
+    Usage with PlayWebit strategy:
+        from supabase import create_client
+        supabase = create_client(url, key)
+
+        engine = SpiderHashEngine(
+            strategy=PlayWebitStrategy(supabase)
+        )
+        result = engine.calculate(event_context={
+            "nft_data":  nft_row,
+            "timestamp": timestamp_ms
+        })
+
+    Usage with generic strategy:
+        engine = SpiderHashEngine()
+        result = engine.calculate(event_context={
+            "table_hashes":  { "nfts": "abc...", "wallets": "def..." },
+            "previous_hash": "000..."
+        })
+    """
+
+    def __init__(self, strategy: Optional[HashStrategy] = None):
         """
-        Verify a stored Spider Hash hasn't been tampered with.
+        Args:
+            strategy: HashStrategy instance. Defaults to GenericStrategy.
+        """
+        self.strategy = strategy or GenericStrategy()
+        self.version  = "1.0.0"
 
-        Recomputes the hash from current table data and compares
-        to the stored hash. If they don't match — tamper detected.
+    def calculate(self, event_context: Dict) -> Dict:
+        """
+        Calculate a Spider Hash using the configured strategy.
 
         Args:
-            stored_hash:   The Spider Hash stored in your blockchain
-            table_hashes:  Current hashes from each table row
-            previous_hash: Previous Spider Hash in the chain
-            anchor_data:   Same anchor data used when hash was created
-            timestamp:     Same timestamp used when hash was created
-
-        Returns:
-            True if hash is valid, False if tampered
-        """
-        recomputed = self.calculate_spider_hash(
-            table_hashes=table_hashes,
-            previous_hash=previous_hash,
-            anchor_data=anchor_data,
-            timestamp=timestamp
-        )
-        return recomputed == stored_hash
-
-    def detect_tamper(
-        self,
-        stored_hash: str,
-        current_table_hashes: Dict[str, str],
-        original_table_hashes: Dict[str, str],
-        previous_hash: str,
-        anchor_data: Optional[Dict] = None,
-        timestamp: Optional[int] = None
-    ) -> Dict:
-        """
-        Detect which specific table was tampered with.
-
-        Instead of just saying "tampered", this tells you exactly
-        which table broke the chain.
+            event_context: Dict passed directly to strategy.collect_hashes()
 
         Returns:
             {
-                "tampered": bool,
-                "broken_tables": ["wallets", "nfts"],  # which tables changed
-                "spider_hash_valid": bool
+                "spider_hash": str,       — final 64-char hash
+                "components":  dict,      — individual component hashes
+                "strategy":    str        — strategy class name
             }
         """
-        result = {
-            "tampered": False,
-            "broken_tables": [],
-            "spider_hash_valid": True
+        components  = self.strategy.collect_hashes(event_context)
+        spider_hash = self.strategy.mix_hashes(components)
+
+        return {
+            "spider_hash": spider_hash,
+            "components":  components,
+            "strategy":    self.strategy.__class__.__name__
         }
 
-        # Check each table individually
-        for table_name in original_table_hashes:
-            original = original_table_hashes[table_name]
-            current = current_table_hashes.get(table_name, "")
-            if original != current:
-                result["broken_tables"].append(table_name)
-                result["tampered"] = True
-
-        # Check the overall Spider Hash
-        spider_valid = self.verify_spider_hash(
-            stored_hash=stored_hash,
-            table_hashes=current_table_hashes,
-            previous_hash=previous_hash,
-            anchor_data=anchor_data,
-            timestamp=timestamp
-        )
-        if not spider_valid:
-            result["spider_hash_valid"] = False
-            result["tampered"] = True
-
-        return result
-
-    def hash_row(self, row_data: Dict) -> str:
+    def verify(
+        self,
+        stored_hash:   str,
+        event_context: Dict
+    ) -> bool:
         """
-        Hash a single database row deterministically.
+        Verify a stored Spider Hash matches current state.
 
         Args:
-            row_data: Dict of column: value pairs
+            stored_hash:   Hash stored on blockchain
+            event_context: Same context used when hash was created
 
         Returns:
-            64-character hex SHA-256 hash of the row
+            True if valid, False if tampered
         """
-        return self._hash_dict(row_data)
+        result = self.calculate(event_context)
+        return result["spider_hash"] == stored_hash
 
-    def _hash_dict(self, data: Dict) -> str:
-        """Internal: deterministically hash a dictionary."""
-        serialized = json.dumps(data, sort_keys=True, default=str)
+    def hash_row(self, row_data: Dict) -> str:
+        """Hash a single database row deterministically."""
+        serialized = json.dumps(row_data, sort_keys=True, default=str)
         return hashlib.sha256(serialized.encode()).hexdigest()
