@@ -4,14 +4,15 @@ with open("README.md", "r", encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name="spiderchain",
+    name="spiderweave",
     version="1.0.0",
-    author="PlayWebit / CipherVault",
+    author="Priyanshu Chauhan",
+    author_email="",
     description="Cross-table hash architecture for tamper-proof blockchain data integrity",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/playwebit/spiderchain-sdk",
-    packages=find_packages(),         # finds spiderchain/ and spiderchain/adapters/
+    url="https://github.com/playwebit/spiderweave-sdk",
+    packages=find_packages(),         # finds spiderweave/ and spiderweave/adapters/
     package_dir={"": "."},            # root of repo
     classifiers=[
         "Programming Language :: Python :: 3",
