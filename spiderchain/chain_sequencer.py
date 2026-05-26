@@ -1,13 +1,13 @@
 """
 chain_sequencer.py
 ------------------
-Chain Sequencer — Spider Chain SDK
+Chain Sequencer — SpiderWeave SDK
 
 Maintains the sequential history of Spider Hashes.
 Every event (mint, transfer, sale, update) produces a new
 Spider Hash that links to the previous one — forming a chain.
 
-This is what makes Spider Chain tamper-proof over time:
+This is what makes SpiderWeave tamper-proof over time:
 you can't insert or delete events without breaking the sequence.
 
 No external dependencies. Pure Python.
@@ -21,7 +21,7 @@ class ChainSequencer:
     """
     Manages the sequence of Spider Hashes across events.
 
-    Think of this as the "spine" of the Spider Chain.
+    Think of this as the "spine" of SpiderWeave.
     Each Spider Hash links to the one before it, just like
     blocks in a blockchain, but at the database-row level.
     """
@@ -103,7 +103,7 @@ class ChainSequencer:
         Stores the event so future hashes can chain off it.
 
         Args:
-            chain_id:   Identifier for this chain
+            chain_id:    Identifier for this chain
             spider_hash: The Spider Hash just calculated
             event_type:  Human-readable event label
                          (e.g. "mint", "transfer", "sale", "update")
