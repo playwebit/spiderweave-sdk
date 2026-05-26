@@ -1,11 +1,11 @@
 """
 adapters/base_blockchain_adapter.py
 ------------------------------------
-Base Blockchain Adapter — Spider Chain SDK
+Base Blockchain Adapter — SpiderWeave SDK
 
 Defines the interface every blockchain adapter must implement.
 If you can write these 3 methods for your blockchain,
-Spider Chain anchors to it automatically.
+SpiderWeave anchors to it automatically.
 
 Supported out of the box:
     - PlayWebit  (playwebit_adapter.py)
@@ -23,7 +23,7 @@ class BaseBlockchainAdapter(ABC):
     """
     Abstract interface for blockchain adapters.
 
-    Spider Chain calls these 3 methods to anchor and verify
+    SpiderWeave calls these 3 methods to anchor and verify
     Spider Hashes on-chain. Implement them for your blockchain.
     """
 
