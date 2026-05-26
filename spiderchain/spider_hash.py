@@ -1,7 +1,7 @@
 """
 spider_hash.py
 --------------
-Core Spider Hash Engine — Spider Chain SDK
+Core Spider Hash Engine — SpiderWeave SDK
 
 Supports two modes:
 
@@ -75,22 +75,22 @@ class HashStrategy(ABC):
 
 class PlayWebitStrategy(HashStrategy):
     """
-    PlayWebit / CipherVault 7-component Spider Hash Strategy.
+    PlayWebit 7-component Spider Hash Strategy.
 
-    This is the original Spider Chain Hash Architecture as
+    This is the original SpiderWeave Hash Architecture as
     implemented in PlayWebit's NFT platform.
 
     Components:
-        1. original_hash       — SHA256 of core NFT fields
-        2. previous_nft_hash   — latest hash across all NFTs
-        3. same_token_hash     — latest hash for this specific token
-        4. creator_wallet_hash — wallet integrity_hash for creator
-        5. owner_wallet_hash   — wallet integrity_hash for owner
-        6. creator_session_hash— session integrity_hash for creator
-        7. owner_session_hash  — session integrity_hash for owner
+        1. original_hash        — SHA256 of core NFT fields
+        2. previous_nft_hash    — latest hash across all NFTs
+        3. same_token_hash      — latest hash for this specific token
+        4. creator_wallet_hash  — wallet integrity_hash for creator
+        5. owner_wallet_hash    — wallet integrity_hash for owner
+        6. creator_session_hash — session integrity_hash for creator
+        7. owner_session_hash   — session integrity_hash for owner
 
     Usage:
-        from spiderchain.spider_hash import PlayWebitStrategy
+        from spiderweave.spider_hash import PlayWebitStrategy
         from supabase import create_client
 
         supabase = create_client(url, key)
@@ -246,7 +246,7 @@ class GenericStrategy(HashStrategy):
 
 class SpiderHashEngine:
     """
-    Spider Hash Engine.
+    Spider Hash Engine — SpiderWeave SDK.
 
     Uses a HashStrategy to collect and mix hashes.
     Defaults to GenericStrategy if none provided.
