@@ -1,16 +1,16 @@
 """
 adapters/supabase_adapter.py
 -----------------------------
-Supabase Database Adapter — Spider Chain SDK
+Supabase Database Adapter — SpiderWeave SDK
 
 Ready-to-use adapter for Supabase (PostgreSQL under the hood).
-This is what PlayWebit / CipherVault uses.
+This is what PlayWebit uses.
 
 Install dependency:
     pip install supabase
 
 Usage:
-    from spiderchain.adapters.supabase_adapter import SupabaseAdapter
+    from spiderweave.adapters.supabase_adapter import SupabaseAdapter
     adapter = SupabaseAdapter(url="https://xxx.supabase.co", key="your-anon-key")
 """
 
@@ -19,7 +19,7 @@ import json
 import time
 from typing import List, Dict, Optional
 
-from spiderchain.adapters.base_adapter import BaseDBAdapter
+from spiderweave.adapters.base_adapter import BaseDBAdapter
 
 
 class SupabaseAdapter(BaseDBAdapter):
@@ -62,14 +62,13 @@ class SupabaseAdapter(BaseDBAdapter):
             row = response.data[0]
             return self._hash_dict(row)
 
-        except Exception as e:
+        except Exception:
             return "0" * 64
 
     def get_table_chain(self, table: str, row_id: str) -> List[Dict]:
         """
         Get hash history for a row.
-        Assumes your table has a spider_chain_events table or
-        tracks history via insert-only pattern (like PlayWebit does).
+        Queries the spider_chain_events table for row-level history.
         """
         try:
             response = self.client.table("spider_chain_events") \
