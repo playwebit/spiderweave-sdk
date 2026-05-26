@@ -1,7 +1,7 @@
 """
 adapters/evm_adapter.py
 ------------------------
-EVM Blockchain Adapter — Spider Chain SDK
+EVM Blockchain Adapter — SpiderWeave SDK
 
 Works with any EVM-compatible blockchain:
     - Ethereum mainnet / testnets
@@ -14,7 +14,7 @@ Install dependency:
     pip install web3
 
 Usage:
-    from spiderchain.adapters.evm_adapter import EVMAdapter
+    from spiderweave.adapters.evm_adapter import EVMAdapter
 
     # Ethereum
     adapter = EVMAdapter(
@@ -31,7 +31,7 @@ import time
 import hashlib
 from typing import Dict, Optional, List
 
-from spiderchain.adapters.base_blockchain_adapter import BaseBlockchainAdapter
+from spiderweave.adapters.base_blockchain_adapter import BaseBlockchainAdapter
 
 
 class EVMAdapter(BaseBlockchainAdapter):
@@ -53,7 +53,7 @@ class EVMAdapter(BaseBlockchainAdapter):
             rpc_url:          RPC endpoint for your EVM chain
             private_key:      Private key for signing transactions (optional)
                               If not provided, operates in read-only mode
-            contract_address: Optional Spider Chain smart contract address
+            contract_address: Optional SpiderWeave smart contract address
                               for structured on-chain storage
         """
         try:
@@ -145,7 +145,6 @@ class EVMAdapter(BaseBlockchainAdapter):
         """
         if not self.contract_address:
             return []
-
         return []
 
     def _extract_hash_from_tx(self, tx) -> Optional[str]:
