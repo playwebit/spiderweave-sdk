@@ -1,21 +1,21 @@
 """
 exceptions.py
 -------------
-Spider Chain SDK — Custom Exceptions
+SpiderWeave SDK — Custom Exceptions
 
 Clean, descriptive errors so developers know exactly
 what went wrong and where.
 """
 
 
-class SpiderChainError(Exception):
-    """Base exception for all Spider Chain errors."""
+class SpiderWeaveError(Exception):
+    """Base exception for all SpiderWeave errors."""
     pass
 
 
-class TamperDetectedError(SpiderChainError):
+class TamperDetectedError(SpiderWeaveError):
     """
-    Raised when tampering is detected in a Spider Chain.
+    Raised when tampering is detected in a SpiderWeave chain.
 
     This means one or more database rows have been modified
     after the Spider Hash was anchored on-chain.
@@ -31,7 +31,7 @@ class TamperDetectedError(SpiderChainError):
         )
 
 
-class ChainBrokenError(SpiderChainError):
+class ChainBrokenError(SpiderWeaveError):
     """
     Raised when the Spider Hash chain sequence is broken.
 
@@ -49,7 +49,7 @@ class ChainBrokenError(SpiderChainError):
         )
 
 
-class AdapterNotConfiguredError(SpiderChainError):
+class AdapterNotConfiguredError(SpiderWeaveError):
     """
     Raised when a required adapter is missing.
 
@@ -59,7 +59,7 @@ class AdapterNotConfiguredError(SpiderChainError):
     pass
 
 
-class InvalidHashError(SpiderChainError):
+class InvalidHashError(SpiderWeaveError):
     """
     Raised when a hash value is invalid or malformed.
     """
@@ -70,7 +70,7 @@ class InvalidHashError(SpiderChainError):
         )
 
 
-class TableNotRegisteredError(SpiderChainError):
+class TableNotRegisteredError(SpiderWeaveError):
     """
     Raised when trying to use a table that hasn't been registered.
     """
