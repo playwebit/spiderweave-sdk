@@ -1,7 +1,7 @@
 """
 adapters/postgres_adapter.py
 -----------------------------
-PostgreSQL / MySQL Adapter — Spider Chain SDK
+PostgreSQL / MySQL Adapter — SpiderWeave SDK
 
 For developers using raw PostgreSQL, MySQL, or any
 SQLAlchemy-compatible database.
@@ -12,7 +12,7 @@ Install dependency:
     pip install sqlalchemy        (both, via SQLAlchemy)
 
 Usage:
-    from spiderchain.adapters.postgres_adapter import PostgresAdapter
+    from spiderweave.adapters.postgres_adapter import PostgresAdapter
 
     # Direct PostgreSQL
     adapter = PostgresAdapter(
@@ -30,7 +30,7 @@ import json
 import time
 from typing import List, Dict, Optional
 
-from spiderchain.adapters.base_adapter import BaseDBAdapter
+from spiderweave.adapters.base_adapter import BaseDBAdapter
 
 
 class PostgresAdapter(BaseDBAdapter):
