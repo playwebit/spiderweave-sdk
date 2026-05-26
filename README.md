@@ -1,10 +1,10 @@
-# Spider Chain SDK
+# SpiderWeave SDK
 
 **Cross-table hash architecture for tamper-proof blockchain data integrity.**
 
-Spider Chain links your database tables together with cryptographic hashes and anchors the result on any blockchain. If anyone tampers with even a single row in any table — the entire chain breaks instantly, exposing the attack.
+SpiderWeave links your database tables together with cryptographic hashes and anchors the result on any blockchain. If anyone tampers with even a single row in any table — the entire chain breaks instantly, exposing the attack.
 
-Invented by **PlayWebit / CipherVault** as part of the Spider Chain Hash Architecture research.
+Invented by **Priyanshu Chauhan / PlayWebit** as part of the SpiderWeave Hash Architecture research.
 
 ---
 
@@ -12,7 +12,7 @@ Invented by **PlayWebit / CipherVault** as part of the Spider Chain Hash Archite
 
 NFT metadata and transaction data are typically stored off-chain (in a database like Supabase or PostgreSQL). This creates a vulnerability: anyone with database access can silently change a record — altering ownership, price, or metadata — without the blockchain knowing.
 
-**Spider Chain fixes this** by creating a cryptographic fingerprint that spans multiple tables simultaneously. Change anything, anywhere — and the fingerprint breaks.
+**SpiderWeave fixes this** by creating a cryptographic fingerprint that spans multiple tables simultaneously. Change anything, anywhere — and the fingerprint breaks.
 
 ---
 
@@ -40,31 +40,31 @@ If someone changes `wallets.balance` after a mint — the Spider Hash from that 
 ## Installation
 
 ```bash
-pip install spiderchain
+pip install spiderweave
 ```
 
 Install with your database driver:
 
 ```bash
-pip install spiderchain[supabase]    # Supabase
-pip install spiderchain[postgres]    # PostgreSQL / MySQL
-pip install spiderchain[evm]         # Ethereum / Polygon / EVM chains
-pip install spiderchain[all]         # Everything
+pip install spiderweave[supabase]    # Supabase
+pip install spiderweave[postgres]    # PostgreSQL / MySQL
+pip install spiderweave[evm]         # Ethereum / Polygon / EVM chains
+pip install spiderweave[all]         # Everything
 ```
 
 ---
 
 ## Quick Start
 
-### With Supabase + PlayWebit (CipherVault setup)
+### With Supabase + PlayWebit
 
 ```python
-from spiderchain import SpiderChain
-from spiderchain.adapters.supabase_adapter import SupabaseAdapter
-from spiderchain.adapters.playwebit_adapter import PlayWebitAdapter
+from spiderweave import SpiderWeave
+from spiderweave.adapters.supabase_adapter import SupabaseAdapter
+from spiderweave.adapters.playwebit_adapter import PlayWebitAdapter
 
 # Connect your database and blockchain
-sc = SpiderChain(
+sc = SpiderWeave(
     db_adapter=SupabaseAdapter(
         url="https://your-project.supabase.co",
         key="your-anon-key"
@@ -74,7 +74,7 @@ sc = SpiderChain(
     )
 )
 
-# Tell Spider Chain which tables to watch
+# Tell SpiderWeave which tables to watch
 sc.register_table("nfts",        lookup_key="token_id")
 sc.register_table("wallets",     lookup_key="user_id")
 sc.register_table("sessions",    lookup_key="user_id")
@@ -97,11 +97,11 @@ print(result["tx_hash"])      # blockchain transaction proof
 ### With PostgreSQL + Ethereum
 
 ```python
-from spiderchain import SpiderChain
-from spiderchain.adapters.postgres_adapter import PostgresAdapter
-from spiderchain.adapters.evm_adapter import EVMAdapter
+from spiderweave import SpiderWeave
+from spiderweave.adapters.postgres_adapter import PostgresAdapter
+from spiderweave.adapters.evm_adapter import EVMAdapter
 
-sc = SpiderChain(
+sc = SpiderWeave(
     db_adapter=PostgresAdapter(
         connection_string="postgresql://user:pass@localhost:5432/mydb"
     ),
@@ -125,7 +125,7 @@ result = sc.create_and_anchor(
 ### Hash Only (No Blockchain)
 
 ```python
-sc = SpiderChain(db_adapter=SupabaseAdapter(url="...", key="..."))
+sc = SpiderWeave(db_adapter=SupabaseAdapter(url="...", key="..."))
 
 sc.register_table("documents", lookup_key="doc_id")
 sc.register_table("authors",   lookup_key="user_id")
@@ -164,7 +164,7 @@ else:
 ## Detecting Tampering
 
 ```python
-from spiderchain.exceptions import TamperDetectedError
+from spiderweave.exceptions import TamperDetectedError
 
 try:
     sc.detect_tamper(chain_id="token_abc123")
@@ -196,7 +196,7 @@ for event in history:
 If you use MongoDB, Firebase, DynamoDB, or any other database — write a custom adapter in 5 methods:
 
 ```python
-from spiderchain.adapters.base_adapter import BaseDBAdapter
+from spiderweave.adapters.base_adapter import BaseDBAdapter
 import hashlib, json
 
 class MongoDBAdapter(BaseDBAdapter):
@@ -250,7 +250,7 @@ class MongoDBAdapter(BaseDBAdapter):
 Then use it exactly like the built-in adapters:
 
 ```python
-sc = SpiderChain(
+sc = SpiderWeave(
     db_adapter=MongoDBAdapter("mongodb://localhost", "mydb"),
     blockchain_adapter=EVMAdapter(rpc_url="...")
 )
@@ -263,7 +263,7 @@ sc = SpiderChain(
 For any blockchain not supported out of the box:
 
 ```python
-from spiderchain.adapters.base_blockchain_adapter import BaseBlockchainAdapter
+from spiderweave.adapters.base_blockchain_adapter import BaseBlockchainAdapter
 
 class SolanaAdapter(BaseBlockchainAdapter):
 
@@ -295,7 +295,7 @@ class SolanaAdapter(BaseBlockchainAdapter):
 
 ## Required Database Table
 
-Spider Chain needs one table in your database to store chain events:
+SpiderWeave needs one table in your database to store chain events:
 
 ```sql
 CREATE TABLE spider_chain_events (
@@ -318,7 +318,7 @@ For Supabase, run this SQL in your project's SQL editor.
 
 ## API Reference
 
-### `SpiderChain(db_adapter, blockchain_adapter=None)`
+### `SpiderWeave(db_adapter, blockchain_adapter=None)`
 Main SDK class. Create one instance per application.
 
 ### `.register_table(table_name, lookup_key="id", is_anchor=False)`
@@ -358,12 +358,12 @@ Return the event history for a chain.
 
 ## Research & Citation
 
-Spider Chain Hash Architecture is an original invention described in:
+SpiderWeave Hash Architecture is an original invention described in:
 
-> *Spider Chain Hash Architecture: Cross-Table Tamper Detection for Off-Chain Blockchain Data*
-> PlayWebit / CipherVault Research, 2024
+> *SpiderWeave Hash Architecture: Cross-Table Tamper Detection for Off-Chain Blockchain Data*
+> Priyanshu Chauhan / PlayWebit Research, 2024
 
-If you use Spider Chain SDK in academic work, please cite the above paper.
+If you use SpiderWeave SDK in academic work, please cite the above paper.
 
 ---
 
@@ -375,6 +375,6 @@ MIT License. See LICENSE file for details.
 
 ## Contributing
 
-Spider Chain is open to community adapters for new databases and blockchains.
+SpiderWeave is open to community adapters for new databases and blockchains.
 To contribute an adapter, implement `BaseDBAdapter` or `BaseBlockchainAdapter`
 and open a pull request.
