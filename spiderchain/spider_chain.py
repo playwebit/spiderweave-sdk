@@ -1,17 +1,17 @@
 """
 spider_chain.py
 ---------------
-SpiderChain — Main SDK Class
+SpiderWeave — Main SDK Class
 
 This is the only class developers need to import.
 Everything else is wired up internally.
 
 Basic usage:
-    from spiderchain import SpiderChain
-    from spiderchain.adapters.supabase_adapter import SupabaseAdapter
-    from spiderchain.adapters.playwebit_adapter import PlayWebitAdapter
+    from spiderweave import SpiderWeave
+    from spiderweave.adapters.supabase_adapter import SupabaseAdapter
+    from spiderweave.adapters.playwebit_adapter import PlayWebitAdapter
 
-    sc = SpiderChain(
+    sc = SpiderWeave(
         db_adapter=SupabaseAdapter(url="...", key="..."),
         blockchain_adapter=PlayWebitAdapter(node_url="...")
     )
@@ -31,20 +31,20 @@ Basic usage:
 import time
 from typing import Dict, List, Optional
 
-from spiderchain.spider_hash import SpiderHashEngine
-from spiderchain.chain_sequencer import ChainSequencer
-from spiderchain.adapters.base_adapter import BaseDBAdapter
-from spiderchain.adapters.base_blockchain_adapter import BaseBlockchainAdapter
-from spiderchain.exceptions import (
+from spiderweave.spider_hash import SpiderHashEngine
+from spiderweave.chain_sequencer import ChainSequencer
+from spiderweave.adapters.base_adapter import BaseDBAdapter
+from spiderweave.adapters.base_blockchain_adapter import BaseBlockchainAdapter
+from spiderweave.exceptions import (
     TamperDetectedError,
     ChainBrokenError,
     AdapterNotConfiguredError
 )
 
 
-class SpiderChain:
+class SpiderWeave:
     """
-    Main Spider Chain SDK class.
+    Main SpiderWeave SDK class.
 
     Orchestrates the full Spider Hash lifecycle:
         1. Fetch rows from all registered tables
@@ -80,7 +80,7 @@ class SpiderChain:
         table_name: str,
         lookup_key: str = "id",
         is_anchor: bool = False
-    ) -> "SpiderChain":
+    ) -> "SpiderWeave":
         """
         Register a database table to participate in Spider Hash calculation.
 
@@ -198,7 +198,7 @@ class SpiderChain:
         if not self.blockchain:
             raise AdapterNotConfiguredError(
                 "No blockchain adapter configured. "
-                "Pass blockchain_adapter= to SpiderChain()."
+                "Pass blockchain_adapter= to SpiderWeave()."
             )
 
         if timestamp is None:
@@ -339,7 +339,7 @@ class SpiderChain:
         Walk the chain history and detect any broken links.
 
         Args:
-            chain_id: Chain identifier
+            chain_id: Identifier for this chain
             limit:    How many events to check
 
         Returns:
