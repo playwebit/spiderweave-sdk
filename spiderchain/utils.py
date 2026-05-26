@@ -1,7 +1,7 @@
 """
 utils.py
 --------
-Spider Chain SDK — Utility Functions
+SpiderWeave SDK — Utility Functions
 
 Shared helpers used across the SDK.
 """
