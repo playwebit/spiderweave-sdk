@@ -361,7 +361,7 @@ Return the event history for a chain.
 SpiderWeave Hash Architecture is an original invention described in:
 
 > *SpiderWeave Hash Architecture: Cross-Table Tamper Detection for Off-Chain Blockchain Data*
-> Priyanshu Chauhan / PlayWebit Research, 2024
+> Priyanshu Chauhan / PlayWebit Research, 2026
 
 If you use SpiderWeave SDK in academic work, please cite the above paper.
 
