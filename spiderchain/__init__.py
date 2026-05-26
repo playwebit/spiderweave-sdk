@@ -1,21 +1,21 @@
 """
-Spider Chain SDK
-----------------
+SpiderWeave SDK
+---------------
 A cross-table hash architecture for tamper-proof blockchain data integrity.
 
-Invented by: PlayWebit / CipherVault
+Invented by: Priyanshu Chauhan / PlayWebit
 
 Usage:
-    from spiderchain import SpiderChain
-    from spiderchain.adapters.supabase_adapter import SupabaseAdapter
-    from spiderchain.adapters.playwebit_adapter import PlayWebitAdapter
+    from spiderweave import SpiderWeave
+    from spiderweave.adapters.supabase_adapter import SupabaseAdapter
+    from spiderweave.adapters.playwebit_adapter import PlayWebitAdapter
 """
 
-from spiderchain.spider_chain import SpiderChain
-from spiderchain.spider_hash import SpiderHashEngine
-from spiderchain.chain_sequencer import ChainSequencer
-from spiderchain.exceptions import (
-    SpiderChainError,
+from spiderweave.spider_chain import SpiderWeave
+from spiderweave.spider_hash import SpiderHashEngine
+from spiderweave.chain_sequencer import ChainSequencer
+from spiderweave.exceptions import (
+    SpiderWeaveError,
     TamperDetectedError,
     ChainBrokenError,
     AdapterNotConfiguredError,
@@ -24,14 +24,14 @@ from spiderchain.exceptions import (
 )
 
 __version__ = "1.0.0"
-__author__ = "PlayWebit / CipherVault"
+__author__ = "Priyanshu Chauhan"
 __license__ = "MIT"
 
 __all__ = [
-    "SpiderChain",
+    "SpiderWeave",
     "SpiderHashEngine",
     "ChainSequencer",
-    "SpiderChainError",
+    "SpiderWeaveError",
     "TamperDetectedError",
     "ChainBrokenError",
     "AdapterNotConfiguredError",
